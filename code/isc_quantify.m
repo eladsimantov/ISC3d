@@ -2,7 +2,7 @@ function [varargout] = isc_quantify(alphaThigh,alphaShank,alphaFoot,opts)
     % QuantifyISC is a function to quantify intersegmental
     % coordination. Enter the type of result you wish to quantify
     % along with the thigh shank and foot trajectories.
-    
+    %
     % Usage:
     %   planarityIndex = isc_quantify(alphaThigh,alphaShank,alphaFoot,type,"PI")
     %   u3t = isc_quantify(alphaThigh,alphaShank,alphaFoot,type,"u3t")
@@ -73,27 +73,21 @@ function [varargout] = isc_quantify(alphaThigh,alphaShank,alphaFoot,opts)
     % with respect to the thigh axis. An increase in this value
     % represents the "rotation about the u3 axis" which is observed
     % in increase in incline in Able bodied treadmill gait. 
-    
-    % PVPC2 - Percentage Variance of PC2 represents the "width" of
-    % the loop which we have observed to be increasing with incline
-    % using Able bodied treadmill data. This is in addition to the
-    % rotation of the loop represented by u1t increasing which is
-    % defined above.
 end
 
 
 
 function varargout = unpackMat(inputMat)
-            % unpackMat Unpacks columns of a matrix into separate output variables.
-            %
-            %   [a, b, c, ...] = unpackMat(inputMat) assigns each column of inputMat 
-            %   to a separate output variable. The number of outputs must not exceed 
-            %   the number of columns in inputMat.
-            %
-            %   Example:
-            %       A = rand(100, 3);
-            %       [x, y, z] = unpackMat(A);
-            for col = 1:nargout
-                varargout{col} = inputMat(:,col);
-            end
-        end
+    % unpackMat Unpacks columns of a matrix into separate output variables.
+    %
+    %   [a, b, c, ...] = unpackMat(inputMat) assigns each column of inputMat 
+    %   to a separate output variable. The number of outputs must not exceed 
+    %   the number of columns in inputMat.
+    %
+    %   Example:
+    %       A = rand(100, 3);
+    %       [x, y, z] = unpackMat(A);
+    for col = 1:nargout
+        varargout{col} = inputMat(:,col);
+    end
+end

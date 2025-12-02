@@ -1,4 +1,6 @@
 function [alpha, beta] = isc_rotm2elev(RotmArray)
+%ISC_ROTM2ELEV  Computes elevation angles arrays for the thigh,
+%shank and foot segments given the rotation matrices arrays.
 % Input: RotmArray - 3x3xN rotation matrices (global←segment)
 % Output: alpha - sagittal elevation angles (XY plane) in DEGREE
 %         beta  - frontal elevation angle (XZ plane) in DEGREE

@@ -1,4 +1,7 @@
 function [R_thigh, R_shank, R_foot] = isc_joint2rotm(pelvis, hip, knee, ankle, side)
+    %ISC_JOINT2ROTM Computes arrays of rotation matrices for the thigh,
+    %shank and foot segments given anatomical joint angles given the pelvis,
+    %hip, knee and ankle for full single gait cycle.
     % Inputs: 
     %   Nx3 joint angles in DEGREES! (Vicon anatomical convention),
     %   side "L" or "R" because a some angles need to be reversed.
@@ -31,7 +34,6 @@ function [R_thigh, R_shank, R_foot] = isc_joint2rotm(pelvis, hip, knee, ankle, s
     [hipFlexion, hipAdduction, hipRotation] = deal(hip(:,1),hip(:,2),hip(:,3));
     [kneeFlexion, kneeAdduction, kneeRotation] = deal(knee(:,1),knee(:,2),knee(:,3));
     [ankleDorsiflexion, ankleInversion, ankleRotation] = deal(ankle(:,1),ankle(:,2),ankle(:,3));
-    offsetAnkleDorsiflex = pi/2; % 90 degree offset for foot
     offsetAnkleDorsiflex = pi/2*ones(size(pelvicRotation)); % 90 degree offset for foot
 
     % Redefine our own Coordinate systems
@@ -92,18 +94,12 @@ function [R_thigh, R_shank, R_foot] = isc_joint2rotm(pelvis, hip, knee, ankle, s
         Rp = eul2rotm([-pelvicTilt, pelvicObliquity, pelvicRotation],'ZXY');  % Tilt/Z, Obliquity/X', Rotation/Y''
         Rh = eul2rotm([hipFlexion, -hipAdduction, -hipRotation],'ZXY');  % Flexion/Z, Adduction/X', Rotation/Y''
         Rk = eul2rotm([-kneeFlexion, -kneeAdduction, -kneeRotation],'ZXY');  % Flexion/Z, Adduction/X', Rotation/Y''
-        
-        ROffsetAnkle = eul2rotm([offsetAnkleDorsiflex,zeros(length(offsetAnkleDorsiflex),2)],"ZYX");
-        Ra = eul2rotm([ankleDorsiflexion, ...
-            -ankleRotation, ankleInversion],'ZXY');  % Dorsiflexion/Z, Rotation/X', Inversion/Y''
-        Rtmp = pagemtimes(ROffsetAnkle,Ra);
         Ra = eul2rotm([offsetAnkleDorsiflex+ankleDorsiflexion, ...
             -ankleRotation, -ankleInversion],'ZXY');  % Dorsiflexion/Z, Rotation/X', Inversion/Y''
     elseif strcmp(side,'R')
         Rp = eul2rotm([-pelvicTilt, -pelvicObliquity, pelvicRotation],'ZXY');  % Tilt/Z, Obliquity/X', Rotation/Y''
         Rh = eul2rotm([hipFlexion, hipAdduction, hipRotation],'ZXY');  % Flexion/Z, Adduction/X', Rotation/Y''
         Rk = eul2rotm([-kneeFlexion, kneeAdduction, kneeRotation],'ZXY');  % Flexion/Z, Adduction/X', Rotation/Y''
-        
         Ra = eul2rotm([offsetAnkleDorsiflex+ankleDorsiflexion, ...
             ankleRotation, -ankleInversion],'ZXY');  % Dorsiflexion/Z, Rotation/X', Inversion/Y''
     end
