@@ -7,18 +7,21 @@ function [varargout] = isc_quantify(alphaThigh,alphaShank,alphaFoot,opts)
     %   planarityIndex = isc_quantify(alphaThigh,alphaShank,alphaFoot,type,"PI")
     %   u3t = isc_quantify(alphaThigh,alphaShank,alphaFoot,type,"u3t")
     %   PVPC2 = isc_quantify(alphThigh,alphaShank,alphaFoot,type,"PVPC2")
-    % --------------------------------------------- % 
-    % It is based on definitions provided in:
-    % N. A. Borghese, L. Bianchi, and Francesco Lacquaniti, 
-    % “Kinematic determinants of human locomotion,” 
-    % The Journal of Physiology, vol. 494, no. 3, pp. 863–879, 
-    % Aug. 1996, doi: 10.1113/jphysiol.1996.sp021539.
-    % AND 
-    % Simon Israeli‐Korn et al., 
-    % “Intersegmental coordination patterns are differently affected 
-    % in Parkinson’s disease and cerebellar ataxia,” 
-    % Journal of Neurophysiology, vol. 121, no. 2, pp. 672–689, 
-    % Feb. 2019, doi: 10.1152/jn.00788.2017.
+    %   -----------------------------------------------------------------------------
+    %   References:
+    %   [1] Siman Tov, E., & Krausz, N. E. (2026). "Extending the Law of 
+    %       Intersegmental Coordination: Implications for Powered 
+    %       Prosthetic Controls." arXiv:2602.02181.
+    %       PDF:  https://arxiv.org/pdf/2602.02181.pdf
+    %   [2] N. A. Borghese, L. Bianchi, and Francesco Lacquaniti, 
+    %       "Kinematic determinants of human locomotion," 
+    %       The Journal of Physiology, vol. 494, no. 3, pp. 863–879, 
+    %   [3] Aug. 1996, doi: 10.1113/jphysiol.1996.sp021539.
+    %       Simon Israeli‐Korn et al., 
+    %       "Intersegmental coordination patterns are differently affected 
+    %       in Parkinson’s disease and cerebellar ataxia," 
+    %       Journal of Neurophysiology, vol. 121, no. 2, pp. 672–689, 
+    %       Feb. 2019, doi: 10.1152/jn.00788.2017.
     % --------------------------------------------- % 
     arguments (Input)
         alphaThigh (:,1) double

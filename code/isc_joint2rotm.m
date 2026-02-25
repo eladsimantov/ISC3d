@@ -9,7 +9,14 @@ function [R_thigh, R_shank, R_foot] = isc_joint2rotm(pelvis, hip, knee, ankle, s
     %   3x3xN rotation matrices for each segment in global frame
     % Usage:
     %   [R_thigh, R_shank, R_fosot] = isc_joint2rotm(pelvis, hip, knee, ankle, "L")
-    % 
+    %   -----------------------------------------------------------------------------
+    %   References:
+    %   [1] Siman Tov, E., & Krausz, N. E. (2026). "Extending the Law of 
+    %       Intersegmental Coordination: Implications for Powered 
+    %       Prosthetic Controls." arXiv:2602.02181.
+    %       PDF:  https://arxiv.org/pdf/2602.02181.pdf
+    %   -----------------------------------------------------------------------------
+
     arguments (Input)
         pelvis (:,3) double
         hip (:,3) double

@@ -3,9 +3,15 @@ function [Qout] = isc_lateralCorrections(Q,side,opts)
 %angles/moments/velocities and corrects them to Left and Right sides.
 %   NOTICE: in the transformation matrices, we replace ankle inversion and
 %   rotation orders. This DOES NOT mean we do so in our definitions of the
-%   vectors: q, qdot, tau. This is why in lateral corrections we we DO NOT 
+%   vectors: q, qdot, tau. This is why in lateral corrections we DO NOT 
 %   replace them.
-%
+%   -----------------------------------------------------------------------------
+%   References:
+%   [1] Siman Tov, E., & Krausz, N. E. (2026). "Extending the Law of 
+%       Intersegmental Coordination: Implications for Powered 
+%       Prosthetic Controls." arXiv:2602.02181.
+%       PDF:  https://arxiv.org/pdf/2602.02181.pdf
+%   -----------------------------------------------------------------------------
 arguments
     Q (:,12) double
     side (1,1) char {mustBeMember(side,{'L','R'})}

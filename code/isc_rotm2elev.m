@@ -8,6 +8,16 @@ function [alpha, beta] = isc_rotm2elev(RotmArray)
 %   [alpha_thigh, beta_thigh] = isc_rotm2elev(R_thigh)
 %   [alpha_shank, beta_shank] = isc_rotm2elev(R_shank)
 %   [alpha_foot, beta_foot] = isc_rotm2elev(R_foot)
+%   -----------------------------------------------------------------------------
+%   References:
+%   [1] Siman Tov, E., & Krausz, N. E. (2026). "Extending the Law of 
+%       Intersegmental Coordination: Implications for Powered 
+%       Prosthetic Controls." arXiv:2602.02181.
+%       PDF:  https://arxiv.org/pdf/2602.02181.pdf
+%   [2] N. A. Borghese, L. Bianchi, and Francesco Lacquaniti, 
+%       "Kinematic determinants of human locomotion," 
+%       The Journal of Physiology, vol. 494, no. 3, pp. 863–879.
+%   -----------------------------------------------------------------------------
 
 arguments (Input)
     RotmArray (3,3,:) double

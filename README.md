@@ -26,3 +26,19 @@ q_right = [-pelvicTilt, -pelvicObliquity, pelvicRotation, hipFlexion, hipAdducti
 J_alpha_left = isc_elevationJacobian(q_left)
 J_alpha_right = isc_elevationJacobian(q_right)
 ```
+
+
+## Citation
+If you use this toolbox in your research, please cite:
+
+```bibtex
+@misc{tov2026extendinglawintersegmentalcoordination,
+      title        = {Extending the Law of Intersegmental Coordination: Implications for Powered Prosthetic Controls},
+      author       = {Elad Siman Tov and Nili E. Krausz},
+      year         = {2026},
+      eprint       = {2602.02181},
+      archivePrefix= {arXiv},
+      primaryClass = {cs.RO},
+      url          = {https://arxiv.org/abs/2602.02181}
+}
+```
