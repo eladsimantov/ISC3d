@@ -95,7 +95,7 @@ function [R_thigh, R_shank, R_foot] = isc_joint2rotm(pelvis, hip, knee, ankle, s
         Rh = eul2rotm([hipFlexion, -hipAdduction, -hipRotation],'ZXY');  % Flexion/Z, Adduction/X', Rotation/Y''
         Rk = eul2rotm([-kneeFlexion, -kneeAdduction, -kneeRotation],'ZXY');  % Flexion/Z, Adduction/X', Rotation/Y''
         Ra = eul2rotm([offsetAnkleDorsiflex+ankleDorsiflexion, ...
-            -ankleRotation, -ankleInversion],'ZXY');  % Dorsiflexion/Z, Rotation/X', Inversion/Y''
+            -ankleRotation, ankleInversion],'ZXY');  % Dorsiflexion/Z, Rotation/X', Inversion/Y''
     elseif strcmp(side,'R')
         Rp = eul2rotm([-pelvicTilt, -pelvicObliquity, pelvicRotation],'ZXY');  % Tilt/Z, Obliquity/X', Rotation/Y''
         Rh = eul2rotm([hipFlexion, hipAdduction, hipRotation],'ZXY');  % Flexion/Z, Adduction/X', Rotation/Y''

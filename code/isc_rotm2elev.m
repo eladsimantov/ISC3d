@@ -23,5 +23,5 @@ segmentAxis = squeeze(RotmArray(:,2,:))'; % N×3, segment direction (y-axis)
 
 % our segment Y axis is exactly the proximal minus distal (vector from distal to proximal) coords in 3D!
 alpha = rad2deg(atan2(-segmentAxis(:,1),segmentAxis(:,2))); % sagittal (XY in ISB lab frame)
-beta  = rad2deg(atan2(segmentAxis(:,3), segmentAxis(:,2))); % frontal (XZ in ISB lab frame)
+beta  = rad2deg(atan2(segmentAxis(:,3), segmentAxis(:,2))); % frontal (YZ in ISB lab frame)
 end
