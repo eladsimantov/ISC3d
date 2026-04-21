@@ -1,4 +1,4 @@
-function [elevationsMoment,Malpha] = isc_jointTorque2ElevationMoments(Q,Tau,side)
+function [elevationMoments,Malpha] = isc_jointTorque2ElevationMoments(Q,Tau,side)
 %isc_jointTorque2ElevationMoments computes elevation moments of p,t,s,f in
 %three axes using the full 12x12 jacobian and its pseudo inverse.
 % Inputs:
@@ -6,14 +6,14 @@ function [elevationsMoment,Malpha] = isc_jointTorque2ElevationMoments(Q,Tau,side
 %       [Ntimesteps,Ncols,Mtrials] = size(Q); 
 %       Ncols should be 12; -> 3 per joint.
 %   Tau - hip, knee, ankle arrays as they come from MOCAP.
-%         [Ntimesteps,Ncols,Mtrials] = size(Q); 
+%         [Ntimesteps,Ncols,Mtrials] = size(Tau); 
 %         Ncols should be 9; -> 3 per (hip, knee, ankle) joint
 % Outputs:
-%   elevationsMoment - [Malpha; Mbeta; Mgamma] in same units as the input. 
+%   elevationMoments - [Malpha; Mbeta; Mgamma] in same units as the input. 
 %       pelvis, thigh, shank, foot respectively. 
-%       [Mtrials,Ntimesteps,12] = size(elevationsDot)
-%   Malpha  - elevation moments only for the thigh, shank, foot
-%       [Mtrials,Ntimesteps,3] = size(elevationsDot)
+%       [Mtrials,Ntimesteps,12] = size(elevationMoments)
+%   Malpha  - elevation moments only for the sagittal thigh, shank, foot.
+%       [Mtrials,Ntimesteps,3] = size(Malpha)
 %   -----------------------------------------------------------------------------
 %   References:
 %   [1] Siman Tov, E., & Krausz, N. E. (2026). "Extending the Law of 
@@ -30,7 +30,7 @@ end
 [Ntimesteps,Ncols,Mtrials] = size(Tau); % Ncols should be 12; -> 3 per joint.
 
 % Init the output array with nan values (Mtrials x Ntimesteps x 12).
-elevationsMoment = nan(Mtrials,Ntimesteps,12);
+elevationMoments = nan(Mtrials,Ntimesteps,12);
 Malpha = nan(Mtrials,Ntimesteps,3);
 
 for m = 1:Mtrials

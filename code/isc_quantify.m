@@ -4,9 +4,9 @@ function [varargout] = isc_quantify(alphaThigh,alphaShank,alphaFoot,opts)
     % along with the thigh shank and foot trajectories.
     %
     % Usage:
-    %   planarityIndex = isc_quantify(alphaThigh,alphaShank,alphaFoot,type,"PI")
-    %   u3t = isc_quantify(alphaThigh,alphaShank,alphaFoot,type,"u3t")
-    %   PVPC2 = isc_quantify(alphThigh,alphaShank,alphaFoot,type,"PVPC2")
+    %   planarityIndex = isc_quantify(alphaThigh,alphaShank,alphaFoot,type="PI")
+    %   u3t = isc_quantify(alphaThigh,alphaShank,alphaFoot,type="u3t")
+    %   PVPC2 = isc_quantify(alphThigh,alphaShank,alphaFoot,type="PVPC2")
     %   -----------------------------------------------------------------------------
     %   References:
     %   [1] Siman Tov, E., & Krausz, N. E. (2026). "Extending the Law of 
