@@ -38,3 +38,11 @@ codegen/
 # SimBiology backup files
 *.sbproj.backup
 *.sbproj.bak
+
+# MATLAB toolbox related files
+resources/
+*.prj
+*.ignore
+*.html
+.gitignore
+.gitattributes
