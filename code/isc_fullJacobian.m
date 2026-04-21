@@ -1,10 +1,10 @@
-function J = isc_J(q)
-%isc_J is an extention to the robot jacobian, that uses the
+function J = isc_fullJacobian(q)
+%isc_fullJacobian is an extention to the robot jacobian, that uses the
 %elevation angles as the task-space, and can be useful to
 %compute the transformation from 3D joint2elevation angular velocities and
 %from 3D joint2elevation torques (via the generalized pseudo inverse of the
 %jacobian).
-%       J = isc_J(q)
+%       J = isc_fullJacobian(q)
 % Inputs: 
 %       q = [phi_p; delta_p; rho_p; phi_h; delta_h; rho_h; phi_k; delta_k; rho_k; phi_a; delta_a; rho_a];
 % Notation:

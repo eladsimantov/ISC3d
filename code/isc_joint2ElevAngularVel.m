@@ -1,4 +1,4 @@
-function [Op,Ot,Os,Of] = isc_joint2ElevAngularVel(q,qd,side)
+function [Op,Ot,Os,Of] = isc_joint2ElevAngularVel(q,qd)
 %OmegaFuncs
 %    [Op,Ot,Os,Of] = isc_joint2ElevAngularVel(q,qd,side)
 % Inputs: 
@@ -13,15 +13,19 @@ function [Op,Ot,Os,Of] = isc_joint2ElevAngularVel(q,qd,side)
 %                       w3,     0,     -w1; 
 %                      -w2,     w1,     0
 %                               ];
+% 
+% Extracting the angular velocity components from the skew-symmetric matrices:
 %       alpha_dot=Omega(2,1) - because the elevation velocity in the 
 %           sagittal plane is given by the rotations about the +Z ISB axis.
 %
 %       beta_dot=Omega(2,3) - because the elevation velocity in the 
 %           frontal plane is given by the rotations about the -X ISB axis.
+%           (Note: for the right side it is Omega(2,3), for the left side it is Omega(3,2)).
 %
 %       gamma_dot=Omega(3,1) - because the elevation velocity in the 
 %           transverse plane is given by the rotations about the -Y ISB axis.
-%
+%           (Note: for the right side it is Omega(3,1), for the left side it is Omega(1,3)).
+% 
 % Notations:
 %       phi = flexion, delta = adduction, rho = rotation. 
 %       p = pelvis, h = hip, k = knee, a = ankle.
@@ -39,7 +43,6 @@ function [Op,Ot,Os,Of] = isc_joint2ElevAngularVel(q,qd,side)
 arguments (Input)
     q (12,1) double
     qd (12,1) double 
-    side (1,1) char {mustBeMember(side,{'L','R'})}
 end
 arguments (Output)
     Op (3,3) double

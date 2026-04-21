@@ -1,14 +1,21 @@
 function [R_thigh, R_shank, R_foot] = isc_joint2rotm(pelvis, hip, knee, ankle, side)
     %ISC_JOINT2ROTM Computes arrays of rotation matrices for the thigh,
     %shank and foot segments given anatomical joint angles given the pelvis,
-    %hip, knee and ankle for full single gait cycle.
+    %hip, knee and ankle for full gait cycle.
     % Inputs: 
-    %   Nx3 joint angles in DEGREES! (Vicon anatomical convention),
-    %   side "L" or "R" because a some angles need to be reversed.
+    %   angles = Nx3 joint angles in DEGREES! (Vicon anatomical convention),
+    %   side = "L" or "R" because some angles need to be reversed.
+    %   
+    %   The 3 columns of the input angles are expected to be in the following order:
+    %       [pelvicTilt, pelvicObliquity, pelvicRotation] = deal(pelvis(:,1),pelvis(:,2),pelvis(:,3));
+    %       [hipFlexion, hipAdduction, hipRotation] = deal(hip(:,1),hip(:,2),hip(:,3));
+    %       [kneeFlexion, kneeAdduction, kneeRotation] = deal(knee(:,1),knee(:,2),knee(:,3));
+    %       [ankleDorsiflexion, ankleInversion, ankleRotation] = deal(ankle(:,1),ankle(:,2),ankle(:,3));
+    % 
     % Outputs: 
     %   3x3xN rotation matrices for each segment in global frame
     % Usage:
-    %   [R_thigh, R_shank, R_fosot] = isc_joint2rotm(pelvis, hip, knee, ankle, "L")
+    %   [R_thigh, R_shank, R_foot] = isc_joint2rotm(pelvis, hip, knee, ankle, "L")
     %   -----------------------------------------------------------------------------
     %   References:
     %   [1] Siman Tov, E., & Krausz, N. E. (2026). "Extending the Law of 
