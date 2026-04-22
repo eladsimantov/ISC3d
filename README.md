@@ -4,6 +4,15 @@ A toolbox to streamline the computation and analysis of Intersegmental Coordinat
 Designed in the Neurorobotics and Bionic Limbs Lab (eNaBLe) in the Mechanical Engineering faculty, Technion - IIT.
 
 This work was funded by the Israel Science Foundation grant 2937/24.
+
+## ISB Reference Frames
+![ISB Reference Frames](images/isc3dframes.png)
+In this toolbox we adhere to the ISB recommendations for the definition of the segment reference frames and joint angles.
+
+see:
+Wu, Ge, and Peter R. Cavanagh. “ISB Recommendations for Standardization in the Reporting of Kinematic Data.” Journal of Biomechanics 28, no. 10 (1995): 1257–61. https://doi.org/10.1016/0021-9290(95)00017-C.
+
+
 ## Elevation Angles
 This example demonstrates how to compute elevation angles from joint angles, and then compute intersegmental coordination metrics.
 ```matlab
@@ -20,6 +29,12 @@ planarityIndex = isc_quantify(alpha_thigh,alpha_shank,alpha_foot,type="PI")
 u3t = isc_quantify(alpha_thigh,alpha_shank,alpha_foot,type="u3t")
 PVPC2 = isc_quantify(alpha_thigh,alpha_shank,alpha_foot,type="PVPC2")
 ```
+To compute elevation angles in 3D with lateral corrections for left and right sides, and with a new definition for the foot segment, use the "3D" functions:
+```matlab
+% Compute the 3D elevation angles (alpha, beta, gamma) for each segment, given the rotation matrices array.
+[alpha_thigh, beta_thigh, gamma_thigh] = isc_rotm2elev3D(R_thigh,side='L',is_foot=false)
+[alpha_shank, beta_shank, gamma_shank] = isc_rotm2elev3D(R_shank,side='L',is_foot=false)
+[alpha_foot, beta_foot, gamma_foot] = isc_rotm2elev3D(R_foot,side='L',is_foot=true)
 
 ## The Elevation Jacobian
 It is important to input the joint angles in their correct signs for left and right. 
