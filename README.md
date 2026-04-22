@@ -49,6 +49,7 @@ To compute elevation angles in 3D with lateral corrections for left and right si
 [alpha_thigh, beta_thigh, gamma_thigh] = isc_rotm2elev3D(R_thigh,side='L',is_foot=false)
 [alpha_shank, beta_shank, gamma_shank] = isc_rotm2elev3D(R_shank,side='L',is_foot=false)
 [alpha_foot, beta_foot, gamma_foot] = isc_rotm2elev3D(R_foot,side='L',is_foot=true)
+```
 
 ## The Elevation Jacobian
 It is important to input the joint angles in their correct signs for left and right. 
