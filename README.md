@@ -6,7 +6,8 @@ Designed in the Neurorobotics and Bionic Limbs Lab (eNaBLe) in the Mechanical En
 This work was funded by the Israel Science Foundation grant 2937/24.
 
 ## ISB Reference Frames
-![ISB Reference Frames](images/isc3dframes.png)
+<img src="images/isc3dframes.png" alt="ISB Reference Frames" width="400">
+
 In this toolbox we adhere to the ISB recommendations for the definition of the segment reference frames and joint angles.
 
 see:
