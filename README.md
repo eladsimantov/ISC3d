@@ -1,9 +1,22 @@
 # ISC3d
+[![MATLAB](https://img.shields.io/badge/MATLAB-Toolbox-orange)](https://www.mathworks.com/products/matlab.html)
+[![Requires MATLAB](https://img.shields.io/badge/Requires-MATLAB%20R2021b%2B-blue)](https://www.mathworks.com/products/matlab.html)
+
 A toolbox to streamline the computation and analysis of Intersegmental Coordination in human gait studies. The core algorithm computes 3D elevation angles based solely on 3D anatomical joint angles. Intersegmental Coordination metrics can then be easily computed. Reference frames adhered to ISB recommendations.
 
 Designed in the Neurorobotics and Bionic Limbs Lab (eNaBLe) in the Mechanical Engineering faculty, Technion - IIT.
 
 This work was funded by the Israel Science Foundation grant 2937/24.
+
+
+
+## Quick Links
+- [ISB Reference Frames](#isb-reference-frames)
+- [Elevation Angles](#elevation-angles)
+- [The Elevation Jacobian](#the-elevation-jacobian)
+- [Elevation Space Moments (ESM)](#elevation-space-moments-esm)
+- [Citation](#citation)
+
 
 ## ISB Reference Frames
 <img src="images/isc3dframes.png" alt="ISB Reference Frames" width="400">
