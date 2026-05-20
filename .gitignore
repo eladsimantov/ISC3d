@@ -42,6 +42,15 @@ codegen/
 resources/
 *.prj
 *.ignore
-*.html
+deploymentLog.html
 .gitignore
 .gitattributes
+
+# Environment and validation folders
+realTimeGUI/iscRT/
+realTimeGUI/index_*
+realTimeGUI/main_*
+validation/*
+
+# Cache files
+*__pycache__/

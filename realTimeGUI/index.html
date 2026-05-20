@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ISC 3D Real-Time</title>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            background: #1e1e1e; 
+            color: white; 
+            padding: 15px; 
+            margin: 0; 
+        }
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+        }
+        @media (max-width: 800px) {
+            .grid-container { grid-template-columns: 1fr; }
+        }
+        .col { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+        }
+        .plot { 
+            /* Fixed: Removed the rigid viewport height limit. Guaranteed 400px minimum. */
+            min-height: 400px; 
+            background: #1e1e1e; 
+            border-radius: 8px; 
+        }
+        .stats-box {
+            background: #2d2d2d;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        h3 { 
+            text-align: center; 
+            margin: 0; 
+            padding-top: 5px; 
+            font-weight: 600;
+        }
+        .hl { font-weight: 700; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="grid-container">
+        <div class="col">
+            <h3>Left Leg</h3>
+            <div id="ts-left" class="plot"></div>
+            <div id="3d-left" class="plot"></div>
+            <div id="stats-left" class="stats-box">Gathering data...</div>
+        </div>
+        <div class="col">
+            <h3>Right Leg</h3>
+            <div id="ts-right" class="plot"></div>
+            <div id="3d-right" class="plot"></div>
+            <div id="stats-right" class="stats-box">Gathering data...</div>
+        </div>
+    </div>
+
+    <script>
+        const ws = new WebSocket(`ws://${location.host}/ws`);
+        
+        const cThigh = 'rgb(69, 100, 253)';
+        const cShank = 'rgb(252, 126, 110)';
+        const cFoot = 'rgb(30, 167, 225)';
+
+        // 2D Layout 
+        const tsLayout = {
+            title: { text: 'Elevation Angles', font: {size: 16, color: '#fff'} }, // Added Title
+            margin: {t: 40, b: 40, l: 50, r: 20}, // Increased 't' (top) margin to 40
+            xaxis: {title: 'Time [samples]', range: [0, 100], gridcolor: '#444'},
+            yaxis: {title: 'Elevation Angle [deg]', range: [-80, 120], gridcolor: '#444'},
+            showlegend: true, 
+            legend: {orientation: 'h', y: 1.15}, // Shifted legend up slightly
+            paper_bgcolor: '#1e1e1e',
+            plot_bgcolor: '#1e1e1e',
+            font: {color: '#fff'}
+        };
+
+        const tsTraces = [
+            { y: [], mode: 'lines', name: 'Thigh', line: {color: cThigh, width: 2} },
+            { y: [], mode: 'lines', name: 'Shank', line: {color: cShank, width: 2} },
+            { y: [], mode: 'lines', name: 'Foot', line: {color: cFoot, width: 2} }
+        ];
+
+        Plotly.newPlot('ts-left', JSON.parse(JSON.stringify(tsTraces)), tsLayout, {responsive: true});
+        Plotly.newPlot('ts-right', JSON.parse(JSON.stringify(tsTraces)), tsLayout, {responsive: true});
+
+        // 3D Layout
+    const layout3D = {
+                title: { text: 'Covariation Plane', font: {size: 16, color: '#fff'} }, // Added Title
+                margin: {t: 40, b: 50, l: 10, r: 10}, // Increased 't' (top) margin to 40
+                scene: {
+                    aspectmode: 'cube', 
+                    xaxis: {title: 'Thigh [deg]', range: [30, -20], gridcolor: '#444', backgroundcolor: '#1e1e1e'},
+                    yaxis: {title: 'Shank [deg]', range: [20, -60], gridcolor: '#444', backgroundcolor: '#1e1e1e'},
+                    zaxis: {title: 'Foot [deg]', range: [0, 150], gridcolor: '#444', backgroundcolor: '#1e1e1e'},
+                    camera: { eye: {x: 2.0, y: 2.0, z: 1.4} }
+                },
+                showlegend: false,
+                paper_bgcolor: '#1e1e1e',
+                font: {color: '#fff'}
+            };
+
+        let cnt = 0;
+        const maxPoints = 100;
+
+        function updateLeg(side, data) {
+            const tsId = `ts-${side}`;
+            const plot3dId = `3d-${side}`;
+            const statsId = `stats-${side}`;
+            
+            Plotly.extendTraces(tsId, {
+                y: [[data.angles.thigh], [data.angles.shank], [data.angles.foot]]
+            }, [0, 1, 2]);
+
+            if(cnt > maxPoints) {
+                Plotly.relayout(tsId, { xaxis: { range: [cnt - maxPoints, cnt] }});
+            }
+
+            if(data.pca.var[0] !== 0) {
+                const v = data.pca.var;
+                const p1 = data.pca.pc1;
+                const p2 = data.pca.pc2;
+                const p3 = data.pca.pc3;
+                const planarity = (v[0] + v[1]).toFixed(2);
+                
+                document.getElementById(statsId).innerHTML = `
+                    <div style="text-align: center; font-weight: bold; margin-bottom: 10px; color: #fff; border-bottom: 1px solid #444; padding-bottom: 5px;">
+                        Principal Component Analysis
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span><span class="hl">Planarity (PV1+PV2):</span> ${planarity}%</span>
+                        <span><span class="hl">PV3 (Deviation):</span> ${v[2].toFixed(2)}%</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; font-family: monospace; font-size: 0.95em;">
+                        <div><b>PC1:</b><br>[${p1[0].toFixed(2)}, ${p1[1].toFixed(2)}, ${p1[2].toFixed(2)}]</div>
+                        <div><b>PC2:</b><br>[${p2[0].toFixed(2)}, ${p2[1].toFixed(2)}, ${p2[2].toFixed(2)}]</div>
+                        <div><b>PC3:</b><br>[${p3[0].toFixed(2)}, ${p3[1].toFixed(2)}, ${p3[2].toFixed(2)}]</div>
+                    </div>
+                `;
+            }
+
+            const tsDiv = document.getElementById(tsId);
+            const xBuf = tsDiv.data[0].y.slice(-maxPoints);
+            const yBuf = tsDiv.data[1].y.slice(-maxPoints);
+            const zBuf = tsDiv.data[2].y.slice(-maxPoints);
+
+            const mean = data.pca.mean;
+            const pc3 = data.pca.pc3;
+            const vecScale = 25; 
+
+            const loopTrace = {
+                x: xBuf, y: yBuf, z: zBuf, 
+                mode: 'lines', type: 'scatter3d', 
+                line: {color: 'rgba(69, 100, 253, 0.7)', width: 4}
+            };
+
+            const vectorTrace = {
+                x: [mean[0], mean[0] + pc3[0] * vecScale], 
+                y: [mean[1], mean[1] + pc3[1] * vecScale], 
+                z: [mean[2], mean[2] + pc3[2] * vecScale], 
+                mode: 'lines+markers', type: 'scatter3d', 
+                line: {color: 'white', width: 5},
+                marker: { size: [0, 5], color: 'white' } 
+            };
+
+            Plotly.react(plot3dId, [loopTrace, vectorTrace], layout3D);
+        }
+
+        ws.onmessage = function(event) {
+            const msg = JSON.parse(event.data);
+            cnt++;
+            updateLeg('left', msg.left);
+            updateLeg('right', msg.right);
+        };
+    </script>
+</body>
+</html>
