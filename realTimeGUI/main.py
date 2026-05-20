@@ -1,16 +1,21 @@
 import time
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
-from processor import GaitProcessor
+from processor import GaitProcessor, ExponentialGaitProcessor
 from sensors import mock_sensor_stream, udp_sensor_stream
+from sensors import eval_fourier, THIGH_P, SHANK_P, FOOT_P
+import numpy as np
 
 # --- CONFIGURATION ---
 USE_MOCK_DATA = True 
-WINDOW_SIZE = 300 
-
+WINDOW_SIZE = 10 
+calib_resolution = 30
+calib_data = np.array([[eval_fourier(p, THIGH_P), eval_fourier(p, SHANK_P), eval_fourier(p, FOOT_P)] for p in np.linspace(0, 1, calib_resolution)])
 app = FastAPI()
-proc_L = GaitProcessor(WINDOW_SIZE)
-proc_R = GaitProcessor(WINDOW_SIZE)
+proc_L = ExponentialGaitProcessor(WINDOW_SIZE, calib_data, lambda_prior=0.5)
+proc_R = ExponentialGaitProcessor(WINDOW_SIZE, calib_data, lambda_prior=0.5)
+# proc_L = GaitProcessor(WINDOW_SIZE)
+# proc_R = GaitProcessor(WINDOW_SIZE)
 
 @app.get("/")
 async def get_index():

@@ -2,6 +2,12 @@
 
 This runs a local web server to stream real-time elevation angles and compute sliding-window PCA for Inter-Segmental Coordination (ISC).
 
+## 0. Code architecture
+- `main.py`: The main server script that initializes the FastAPI app, handles WebSocket connections, and orchestrates the data flow.
+- `sensors.py`: Contains functions for generating mock sensor data and streaming real UDP data from the WitMotion IMU.
+- `processor.py`: Contains the logic for processing the sensor data, including PCA computation and any other data transformations needed for the GUI.
+- index.html: The frontend GUI that connects to the WebSocket and visualizes the data in real-time.
+
 ## 1. Prerequisites
 Install the required Python packages in your environment:
 ```bash
@@ -26,6 +32,8 @@ Open any web browser and go to:
 
 ## 4. View the Data on your Phone (Same WiFi Network)
 To view the GUI on your phone, both devices must be on the same WiFi network.
+Make sure that your firewall allows incoming connections on port 8000.
+You may need to set the network profile to "Private" on Windows to allow this.
 
 1. **Find your PC's IP Address:**
    * Open a new Command Prompt on your PC and type `ipconfig`.
@@ -42,8 +50,3 @@ When you are ready to use the real WitMotion UDP stream:
 2. Change line 13 to: `USE_MOCK_DATA = False`.
 3. Restart the server.
 
-## 6. Editing the sensors and processor modules
-The `sensors.py` and `processor.py` files are modularized for better organization.
-- `sensors.py` contains functions for both mock data generation and real UDP streaming.
-- `processor.py` contains the logic for processing the sensor data, including PCA computation.
-You can edit these files to modify the data processing or sensor input methods without affecting the main server code.
