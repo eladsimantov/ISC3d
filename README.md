@@ -4,6 +4,11 @@
 
 A toolbox to streamline the computation and analysis of Intersegmental Coordination in human gait studies. The core algorithm computes 3D elevation angles based solely on 3D anatomical joint angles. Intersegmental Coordination metrics can then be easily computed. Reference frames adhered to ISB recommendations.
 
+Standard motion capture software and most biomechanics studies do not explicitly report elevation angles. In addition, intersegmental coordination metrics are traditionally found by computing elevation angles directly from raw surface marker data. This approach creates a computational bottleneck, bypassing established anatomical joint angle definitions, and limits cross-study meta-analyses. To bridge this gap, we developed an algorithm that transforms standard 3D anatomical joint angles into 3D elevation angles. 
+
+Moreover, to investigate whether coordination extends beyond sagittal plane kinematics, we derived the Elevation Angle Jacobian. This maps angular velocities from anatomical to elevation spaces and allows for the computation of Elevation Space Moments (ESM). These moments are the net contributions of joint torques to each elevation coordinate. 
+These methods are all available in this ISC3d toolbox.
+
 Designed in the Neurorobotics and Bionic Limbs Lab (eNaBLe) in the Mechanical Engineering faculty, Technion - IIT.
 
 This work was funded by the Israel Science Foundation grant 2937/24.
