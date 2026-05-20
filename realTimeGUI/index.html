@@ -64,7 +64,6 @@
 
     <script>
         const ws = new WebSocket(`ws://${location.host}/ws`);
-        
         const cThigh = 'rgb(69, 100, 253)';
         const cShank = 'rgb(252, 126, 110)';
         const cFoot = 'rgb(30, 167, 225)';
@@ -73,7 +72,7 @@
         const tsLayout = {
             title: { text: 'Elevation Angles', font: {size: 16, color: '#fff'} }, // Added Title
             margin: {t: 40, b: 40, l: 50, r: 20}, // Increased 't' (top) margin to 40
-            xaxis: {title: 'Time [samples]', range: [0, 100], gridcolor: '#444'},
+            xaxis: {title: 'Time [samples]', range: [0, 300], gridcolor: '#444'},
             yaxis: {title: 'Elevation Angle [deg]', range: [-80, 120], gridcolor: '#444'},
             showlegend: true, 
             legend: {orientation: 'h', y: 1.15}, // Shifted legend up slightly
@@ -93,7 +92,7 @@
 
         // 3D Layout
     const layout3D = {
-                title: { text: 'Covariation Plane', font: {size: 16, color: '#fff'} }, // Added Title
+                title: { text: 'Covariation Plane (CVP)', font: {size: 16, color: '#fff'} }, // Added Title
                 margin: {t: 40, b: 50, l: 10, r: 10}, // Increased 't' (top) margin to 40
                 scene: {
                     aspectmode: 'cube', 
@@ -108,7 +107,7 @@
             };
 
         let cnt = 0;
-        const maxPoints = 100;
+        const maxPoints = 300; // Show last 300 samples
 
         function updateLeg(side, data) {
             const tsId = `ts-${side}`;
@@ -132,7 +131,7 @@
                 
                 document.getElementById(statsId).innerHTML = `
                     <div style="text-align: center; font-weight: bold; margin-bottom: 10px; color: #fff; border-bottom: 1px solid #444; padding-bottom: 5px;">
-                        Principal Component Analysis
+                        Online PCA Metrics
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                         <span><span class="hl">Planarity (PV1+PV2):</span> ${planarity}%</span>
