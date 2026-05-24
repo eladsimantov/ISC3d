@@ -8,8 +8,8 @@ import numpy as np
 
 # --- CONFIGURATION ---
 USE_MOCK_DATA = True 
-WINDOW_SIZE = 10 
-calib_resolution = 30
+WINDOW_SIZE = 50 
+calib_resolution = 100
 calib_data = np.array([[eval_fourier(p, THIGH_P), eval_fourier(p, SHANK_P), eval_fourier(p, FOOT_P)] for p in np.linspace(0, 1, calib_resolution)])
 app = FastAPI()
 proc_L = ExponentialGaitProcessor(WINDOW_SIZE, calib_data, lambda_prior=0.5)

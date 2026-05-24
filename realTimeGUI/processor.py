@@ -53,7 +53,7 @@ class GaitProcessor:
             self.C = self.C - np.outer(dx_old, x_old - self.mu)
 
         # Default fallback output before minimum samples are reached
-        pca_data = {"mean": [0,0,0], "pc1": [0,0,0], "pc2": [0,0,0], "pc3": [0,0,0], "var": [0,0,0]}
+        pca_data = {"mean": [0,0,0], "pc1": [0,0,0], "pc2": [0,0,0], "pc3": [0,0,0], "var": [0,0,0], "scores": [0,0,0]}
         
         # 3. Compute exact PCA from the running unnormalized covariance
         if self.n >= 3:
@@ -78,11 +78,12 @@ class GaitProcessor:
                 "pc1": evecs[:, 0].tolist(),
                 "pc2": evecs[:, 1].tolist(),
                 "pc3": evecs[:, 2].tolist(),
-                "var": var_exp.tolist()
+                "var": var_exp.tolist(),
+                "scores": ((x - self.mu) @ evecs).tolist()
             }
 
         return {"angles": {"thigh": thigh, "shank": shank, "foot": foot}, "pca": pca_data}
-    
+
 
 class ExponentialGaitProcessor:
     """
@@ -138,7 +139,7 @@ class ExponentialGaitProcessor:
         # 3. Regularize with the prior to anchor the plane
         C_eff = self.C + (self.lambda_prior * self.C_calib)
         
-        pca_data = {"mean": [0,0,0], "pc1": [0,0,0], "pc2": [0,0,0], "pc3": [0,0,0], "var": [0,0,0]}
+        pca_data = {"mean": [0,0,0], "pc1": [0,0,0], "pc2": [0,0,0], "pc3": [0,0,0], "var": [0,0,0], "scores": [0,0,0]}
         
         # 4. Exact PCA on the regularized covariance
         # We can compute immediately because the prior guarantees rank >= 3
@@ -159,13 +160,13 @@ class ExponentialGaitProcessor:
             evecs = evecs * signs
             self.prev_evecs = evecs.copy()
 
-
             pca_data = {
                 "mean": self.mu.tolist(),
                 "pc1": evecs[:, 0].tolist(),
                 "pc2": evecs[:, 1].tolist(),
                 "pc3": evecs[:, 2].tolist(),
-                "var": var_exp.tolist()
+                "var": var_exp.tolist(),
+                "scores": ((x - self.mu) @ evecs).tolist()
             }
 
         return {"angles": {"thigh": thigh, "shank": shank, "foot": foot}, "pca": pca_data}

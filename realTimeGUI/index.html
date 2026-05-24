@@ -51,12 +51,14 @@
         <div class="col">
             <h3>Left Leg</h3>
             <div id="ts-left" class="plot"></div>
+            <div id="scores-left" class="plot" style="min-height: 250px;"></div> <!-- New Plot -->
             <div id="3d-left" class="plot"></div>
             <div id="stats-left" class="stats-box">Gathering data...</div>
         </div>
         <div class="col">
             <h3>Right Leg</h3>
             <div id="ts-right" class="plot"></div>
+            <div id="scores-right" class="plot" style="min-height: 250px;"></div> <!-- New Plot -->
             <div id="3d-right" class="plot"></div>
             <div id="stats-right" class="stats-box">Gathering data...</div>
         </div>
@@ -67,12 +69,13 @@
         const cThigh = 'rgb(69, 100, 253)';
         const cShank = 'rgb(252, 126, 110)';
         const cFoot = 'rgb(30, 167, 225)';
+        const windowSize = 50; // Make sure to match the server's WINDOW_SIZE
 
         // 2D Layout 
         const tsLayout = {
             title: { text: 'Elevation Angles', font: {size: 16, color: '#fff'} }, // Added Title
             margin: {t: 40, b: 40, l: 50, r: 20}, // Increased 't' (top) margin to 40
-            xaxis: {title: 'Time [samples]', range: [0, 300], gridcolor: '#444'},
+            xaxis: {title: 'Time [samples]', range: [0, windowSize], gridcolor: '#444'},
             yaxis: {title: 'Elevation Angle [deg]', range: [-80, 120], gridcolor: '#444'},
             showlegend: true, 
             legend: {orientation: 'h', y: 1.15}, // Shifted legend up slightly
@@ -91,7 +94,7 @@
         Plotly.newPlot('ts-right', JSON.parse(JSON.stringify(tsTraces)), tsLayout, {responsive: true});
 
         // 3D Layout
-    const layout3D = {
+        const layout3D = {
                 title: { text: 'Covariation Plane (CVP)', font: {size: 16, color: '#fff'} }, // Added Title
                 margin: {t: 40, b: 50, l: 10, r: 10}, // Increased 't' (top) margin to 40
                 scene: {
@@ -107,7 +110,29 @@
             };
 
         let cnt = 0;
-        const maxPoints = 300; // Show last 300 samples
+        const maxPoints = windowSize; // Show last windowSize samples
+
+        // New Layout for Scores Plot
+        const scoreLayout = {
+            title: { text: 'Principal Component Scores', font: {size: 16, color: '#fff'} },
+            margin: {t: 40, b: 40, l: 50, r: 20},
+            xaxis: {range: [0, windowSize], gridcolor: '#444'},
+            yaxis: {title: 'Score', range: [-70, 70], gridcolor: '#444'},
+            showlegend: true,
+            legend: {orientation: 'h', y: 1.2},
+            paper_bgcolor: '#1e1e1e',
+            plot_bgcolor: '#1e1e1e',
+            font: {color: '#fff'}
+        };
+
+        // Initialize the new plots
+        const scoreTraces = [
+            { y: [], mode: 'lines', name: 'PC1', line: {color: cThigh, width: 2} },
+            { y: [], mode: 'lines', name: 'PC2', line: {color: cShank, width: 2} },
+            { y: [], mode: 'lines', name: 'PC3', line: {color: cFoot, width: 2} }
+        ];
+        Plotly.newPlot('scores-left', JSON.parse(JSON.stringify(scoreTraces)), scoreLayout);
+        Plotly.newPlot('scores-right', JSON.parse(JSON.stringify(scoreTraces)), scoreLayout);
 
         function updateLeg(side, data) {
             const tsId = `ts-${side}`;
@@ -121,6 +146,15 @@
             if(cnt > maxPoints) {
                 Plotly.relayout(tsId, { xaxis: { range: [cnt - maxPoints, cnt] }});
             }
+
+            Plotly.extendTraces(`scores-${side}`, {
+                y: [[data.pca.scores[0]], [data.pca.scores[1]], [data.pca.scores[2]]]
+            }, [0, 1, 2]);
+
+            if(cnt > maxPoints) {
+                Plotly.relayout(`scores-${side}`, { xaxis: { range: [cnt - maxPoints, cnt] }});
+            }
+
 
             if(data.pca.var[0] !== 0) {
                 const v = data.pca.var;
