@@ -134,6 +134,8 @@
         Plotly.newPlot('scores-left', JSON.parse(JSON.stringify(scoreTraces)), scoreLayout);
         Plotly.newPlot('scores-right', JSON.parse(JSON.stringify(scoreTraces)), scoreLayout);
 
+        let last3DUpdateTime = 0;
+
         function updateLeg(side, data) {
             const tsId = `ts-${side}`;
             const plot3dId = `3d-${side}`;
@@ -143,67 +145,72 @@
                 y: [[data.angles.thigh], [data.angles.shank], [data.angles.foot]]
             }, [0, 1, 2]);
 
-            if(cnt > maxPoints) {
-                Plotly.relayout(tsId, { xaxis: { range: [cnt - maxPoints, cnt] }});
-            }
-
             Plotly.extendTraces(`scores-${side}`, {
                 y: [[data.pca.scores[0]], [data.pca.scores[1]], [data.pca.scores[2]]]
             }, [0, 1, 2]);
 
-            if(cnt > maxPoints) {
+            // Throttle 2D axis sliding window adjustments to once every 5 updates (~6Hz) to save CPU/GPU cycles
+            if (cnt % 5 === 0 && cnt > maxPoints) {
+                Plotly.relayout(tsId, { xaxis: { range: [cnt - maxPoints, cnt] }});
                 Plotly.relayout(`scores-${side}`, { xaxis: { range: [cnt - maxPoints, cnt] }});
             }
 
+            // Throttle heavy 3D WebGL rendering and PCA metrics updating to ~10Hz to prevent browser lag
+            const now = performance.now();
+            if (now - last3DUpdateTime >= 100) {
+                if(data.pca.var[0] !== 0) {
+                    const v = data.pca.var;
+                    const p1 = data.pca.pc1;
+                    const p2 = data.pca.pc2;
+                    const p3 = data.pca.pc3;
+                    const planarity = (v[0] + v[1]).toFixed(2);
+                    
+                    document.getElementById(statsId).innerHTML = `
+                        <div style="text-align: center; font-weight: bold; margin-bottom: 10px; color: #fff; border-bottom: 1px solid #444; padding-bottom: 5px;">
+                            Online PCA Metrics
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span><span class="hl">Planarity (PV1+PV2):</span> ${planarity}%</span>
+                            <span><span class="hl">PV3 (Deviation):</span> ${v[2].toFixed(2)}%</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; font-family: monospace; font-size: 0.95em;">
+                            <div><b>PC1:</b><br>[${p1[0].toFixed(2)}, ${p1[1].toFixed(2)}, ${p1[2].toFixed(2)}]</div>
+                            <div><b>PC2:</b><br>[${p2[0].toFixed(2)}, ${p2[1].toFixed(2)}, ${p2[2].toFixed(2)}]</div>
+                            <div><b>PC3:</b><br>[${p3[0].toFixed(2)}, ${p3[1].toFixed(2)}, ${p3[2].toFixed(2)}]</div>
+                        </div>
+                    `;
+                }
 
-            if(data.pca.var[0] !== 0) {
-                const v = data.pca.var;
-                const p1 = data.pca.pc1;
-                const p2 = data.pca.pc2;
-                const p3 = data.pca.pc3;
-                const planarity = (v[0] + v[1]).toFixed(2);
+                const tsDiv = document.getElementById(tsId);
+                const xBuf = tsDiv.data[0].y.slice(-maxPoints);
+                const yBuf = tsDiv.data[1].y.slice(-maxPoints);
+                const zBuf = tsDiv.data[2].y.slice(-maxPoints);
+
+                const mean = data.pca.mean;
+                const pc3 = data.pca.pc3;
+                const vecScale = 25; 
+
+                const loopTrace = {
+                    x: xBuf, y: yBuf, z: zBuf, 
+                    mode: 'lines', type: 'scatter3d', 
+                    line: {color: 'rgba(69, 100, 253, 0.7)', width: 4}
+                };
+
+                const vectorTrace = {
+                    x: [mean[0], mean[0] + pc3[0] * vecScale], 
+                    y: [mean[1], mean[1] + pc3[1] * vecScale], 
+                    z: [mean[2], mean[2] + pc3[2] * vecScale], 
+                    mode: 'lines+markers', type: 'scatter3d', 
+                    line: {color: 'white', width: 5},
+                    marker: { size: [0, 5], color: 'white' } 
+                };
+
+                Plotly.react(plot3dId, [loopTrace, vectorTrace], layout3D);
                 
-                document.getElementById(statsId).innerHTML = `
-                    <div style="text-align: center; font-weight: bold; margin-bottom: 10px; color: #fff; border-bottom: 1px solid #444; padding-bottom: 5px;">
-                        Online PCA Metrics
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <span><span class="hl">Planarity (PV1+PV2):</span> ${planarity}%</span>
-                        <span><span class="hl">PV3 (Deviation):</span> ${v[2].toFixed(2)}%</span>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; font-family: monospace; font-size: 0.95em;">
-                        <div><b>PC1:</b><br>[${p1[0].toFixed(2)}, ${p1[1].toFixed(2)}, ${p1[2].toFixed(2)}]</div>
-                        <div><b>PC2:</b><br>[${p2[0].toFixed(2)}, ${p2[1].toFixed(2)}, ${p2[2].toFixed(2)}]</div>
-                        <div><b>PC3:</b><br>[${p3[0].toFixed(2)}, ${p3[1].toFixed(2)}, ${p3[2].toFixed(2)}]</div>
-                    </div>
-                `;
+                if (side === 'right') {
+                    last3DUpdateTime = now;
+                }
             }
-
-            const tsDiv = document.getElementById(tsId);
-            const xBuf = tsDiv.data[0].y.slice(-maxPoints);
-            const yBuf = tsDiv.data[1].y.slice(-maxPoints);
-            const zBuf = tsDiv.data[2].y.slice(-maxPoints);
-
-            const mean = data.pca.mean;
-            const pc3 = data.pca.pc3;
-            const vecScale = 25; 
-
-            const loopTrace = {
-                x: xBuf, y: yBuf, z: zBuf, 
-                mode: 'lines', type: 'scatter3d', 
-                line: {color: 'rgba(69, 100, 253, 0.7)', width: 4}
-            };
-
-            const vectorTrace = {
-                x: [mean[0], mean[0] + pc3[0] * vecScale], 
-                y: [mean[1], mean[1] + pc3[1] * vecScale], 
-                z: [mean[2], mean[2] + pc3[2] * vecScale], 
-                mode: 'lines+markers', type: 'scatter3d', 
-                line: {color: 'white', width: 5},
-                marker: { size: [0, 5], color: 'white' } 
-            };
-
-            Plotly.react(plot3dId, [loopTrace, vectorTrace], layout3D);
         }
 
         ws.onmessage = function(event) {

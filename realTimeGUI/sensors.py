@@ -1,6 +1,9 @@
 import asyncio
 import math
 import random
+import json
+import os
+from readWIT import WITMotionPacketReader
 
 # Fourier coefficients based on your fits
 THIGH_P = {'a0': 0.0861, 'a1': -0.3439, 'b1': 0.1067, 'a2': -0.0555, 'b2': -0.0430, 'w': 2.004}
@@ -44,12 +47,76 @@ async def mock_sensor_stream():
         
         yield (t_L, s_L, f_L), (t_R, s_R, f_R)
 
-async def udp_sensor_stream(ip="0.0.0.0", port=8080):
+def get_elevation_angle(roll_deg):
     """
-    TODO: Insert your WitMotion API / UDP socket parsing here.
-    Must yield exactly like the mock stream:
-    yield (thigh_L, shank_L, foot_L), (thigh_R, shank_R, foot_R)
+    Calculates the anatomical elevation angle of a leg segment.
+    Since the IMUs are mounted such that rotation around the X-axis (Roll)
+    represents segment movement, we add a 90-degree offset to calculate
+    the elevation angle relative to the gravity vector.
     """
-    while True:
-        await asyncio.sleep(0.01)
-        yield (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)
+    return roll_deg + 90.0
+
+class SensorProtocol(asyncio.DatagramProtocol):
+    def __init__(self, queue):
+        self.queue = queue
+        self.readers = {}
+
+    def connection_made(self, transport):
+        pass
+
+    def datagram_received(self, data, addr):
+        ip, port = addr
+        if ip not in self.readers:
+            self.readers[ip] = WITMotionPacketReader()
+        
+        packets = self.readers[ip].feed(data)
+        for packet in packets:
+            if packet.get("name") == "angle":
+                roll = packet["values"].get("roll_deg")
+                if roll is not None:
+                    elevation = get_elevation_angle(roll)
+                    self.queue.put_nowait((ip, elevation))
+            elif packet.get("name") == "wt55_record":
+                raw_roll = packet["values"].get("angle_roll")
+                if raw_roll is not None:
+                    # Convert raw 16-bit to degrees
+                    roll = raw_roll / 32768.0 * 180.0
+                    elevation = get_elevation_angle(roll)
+                    self.queue.put_nowait((ip, elevation))
+
+async def udp_sensor_stream():
+    """
+    Listens for UDP packets from WitMotion sensors, decodes them, and yields the angles.
+    Yields (thigh_L, shank_L, foot_L), (thigh_R, shank_R, foot_R)
+    """
+    config_path = os.path.join(os.path.dirname(__file__), "sensor_config.json")
+    with open(config_path, "r") as f:
+        config = json.load(f)
+        
+    udp_ip = config.get("udp", {}).get("ip", "0.0.0.0")
+    udp_port = config.get("udp", {}).get("port", 1399)
+    segment_by_ip = config.get("witmotion", {}).get("segment_by_ip", {})
+    duplicate = config.get("pipeline", {}).get("duplicate_left_to_right", True)
+    
+    queue = asyncio.Queue()
+    loop = asyncio.get_running_loop()
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: SensorProtocol(queue),
+        local_addr=(udp_ip, udp_port)
+    )
+    
+    angles = {"thigh": 0.0, "shank": 0.0, "foot": 0.0}
+    
+    try:
+        while True:
+            ip, pitch = await queue.get()
+            segment = segment_by_ip.get(ip)
+            if segment in angles:
+                angles[segment] = pitch
+            
+            left_data = (angles["thigh"], angles["shank"], angles["foot"])
+            right_data = left_data if duplicate else (0.0, 0.0, 0.0)
+            
+            yield left_data, right_data
+    finally:
+        transport.close()

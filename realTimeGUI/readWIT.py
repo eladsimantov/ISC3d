@@ -1,12 +1,8 @@
 import socket
 from datetime import datetime
 import string
-
-
-PC_IP = "192.168.1.19"
-PC_PORT = 1399
-
-SENSOR_IPS = {"192.168.1.93", "192.168.1.94", "192.168.1.95"}
+import json
+import os
 
 FRAME_HEADER = 0x55
 FRAME_LENGTH = 11
@@ -23,16 +19,71 @@ class WITMotionPacketReader:
         self.buffer.extend(data)
         packets = []
 
-        while True:
-            newline_index = self.buffer.find(b"\r\n")
-            if newline_index < 0:
+        while len(self.buffer) > 0:
+            wt55_idx = self.buffer.find(b"WT55")
+            bin_idx = self.buffer.find(b"\x55")
+
+            first_idx = -1
+            is_wt55 = False
+
+            if wt55_idx != -1 and bin_idx != -1:
+                if wt55_idx < bin_idx:
+                    first_idx = wt55_idx
+                    is_wt55 = True
+                else:
+                    first_idx = bin_idx
+                    is_wt55 = False
+            elif wt55_idx != -1:
+                first_idx = wt55_idx
+                is_wt55 = True
+            elif bin_idx != -1:
+                first_idx = bin_idx
+                is_wt55 = False
+
+            if first_idx == -1:
+                # No headers found. Clear the buffer except maybe the last 3 bytes
+                # in case a partial "WT55" header is being received.
+                keep = min(3, len(self.buffer))
+                if keep > 0:
+                    del self.buffer[:-keep]
+                else:
+                    self.buffer.clear()
                 break
 
-            record = bytes(self.buffer[:newline_index])
-            del self.buffer[:newline_index + 2]
+            # If there is garbage before the first header, discard it
+            if first_idx > 0:
+                del self.buffer[:first_idx]
+                continue
 
-            if record:
-                packets.extend(self._decode_record(record))
+            # Now, the buffer starts with the header (at index 0)
+            if is_wt55:
+                newline_idx = self.buffer.find(b"\r\n")
+                if newline_idx == -1:
+                    # Partial record. Wait for more data.
+                    if len(self.buffer) > 4096:
+                        # Safety fallback to prevent memory leaks if \r\n is missing
+                        del self.buffer[:4]
+                    break
+
+                record = bytes(self.buffer[:newline_idx])
+                del self.buffer[:newline_idx + 2]
+
+                if record:
+                    packets.extend(self._decode_record(record))
+            else:
+                # Binary frame: starts with 0x55. Must be at least 11 bytes.
+                if len(self.buffer) < FRAME_LENGTH:
+                    break
+
+                frame = bytes(self.buffer[:FRAME_LENGTH])
+                if self._is_valid_frame(frame):
+                    decoded = self._decode_frame(frame)
+                    if decoded is not None:
+                        packets.append(decoded)
+                    del self.buffer[:FRAME_LENGTH]
+                else:
+                    # Invalid frame. Discard the 0x55 byte to search for the next one.
+                    del self.buffer[:1]
 
         return packets
 
@@ -93,11 +144,12 @@ class WITMotionPacketReader:
         }
 
         field_names = [
+            "ms_counter",
             "acc_x", "acc_y", "acc_z",
             "gyro_x", "gyro_y", "gyro_z",
-            "angle_roll", "angle_pitch", "angle_yaw",
             "mag_x", "mag_y", "mag_z",
-            "quat_w", "quat_x", "quat_y", "quat_z",
+            "angle_roll", "angle_pitch", "angle_yaw",
+            "quat_w", "quat_x", "quat_y",
         ]
 
         if len(words) == len(field_names):
@@ -272,28 +324,137 @@ def print_packet(timestamp, sensor_ip, sensor_port, packet):
     print()
 
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind((PC_IP, PC_PORT))
+if __name__ == "__main__":
+    import sys
+    import time
+    config_path = os.path.join(os.path.dirname(__file__), "sensor_config.json")
+    with open(config_path, "r") as f:
+        config = json.load(f)
 
-reader = WITMotionPacketReader()
+    pc_ip = config.get("udp", {}).get("ip", "0.0.0.0")
+    pc_port = config.get("udp", {}).get("port", 1399)
+    segment_by_ip = config.get("witmotion", {}).get("segment_by_ip", {})
+    configured_ips = set(segment_by_ip.keys())
 
-print(f"Listening for IMUs on {PC_IP}:{PC_PORT}...\n")
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        sock.bind((pc_ip, pc_port))
+    except OSError as e:
+        print(f"\n[ERROR] Could not bind to port {pc_port} on {pc_ip}.")
+        print("This usually means another program is already using this port (e.g., main.py or another instance of readWIT.py).")
+        print("Please make sure all other GUI/sensor scripts are closed and try again.\n")
+        sys.exit(1)
 
-while True:
-    data, addr = sock.recvfrom(4096)
-    sensor_ip, sensor_port = addr
+    readers = {}
 
-    if sensor_ip not in SENSOR_IPS:
-        continue
+    # Initialize dashboard dictionary based on configured sensors
+    latest = {}
+    for ip, segment in segment_by_ip.items():
+        latest[segment] = {
+            "acc": [0.0, 0.0, 0.0],
+            "gyro": [0.0, 0.0, 0.0],
+            "angle": [0.0, 0.0, 0.0],
+            "ip": ip,
+            "last_seen": None
+        }
 
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    packets = reader.feed(data)
+    # Enable ANSI escape codes on Windows console
+    os.system('')
 
-    if not packets:
-        print(f"[{timestamp}] IMU {sensor_ip}:{sensor_port} received {len(data)} bytes")
-        print(f"  hex: {data.hex(' ')}")
-        print()
-        continue
+    print(f"Listening for IMUs on {pc_ip}:{pc_port}...")
+    print(f"Configured IMU IPs: {configured_ips}")
+    print("Starting Live IMU Dashboard. Press Ctrl+C to exit.\n")
 
-    for packet in packets:
-        print_packet(timestamp, sensor_ip, sensor_port, packet)
+    last_line_count = 0
+    last_print_time = 0
+    unknown_ips = set()
+
+    while True:
+        try:
+            data, addr = sock.recvfrom(4096)
+        except KeyboardInterrupt:
+            print("\nExiting dashboard.")
+            break
+
+        sensor_ip, sensor_port = addr
+        now = time.time()
+
+        if sensor_ip not in configured_ips:
+            if sensor_ip not in unknown_ips:
+                unknown_ips.add(sensor_ip)
+                # Move cursor down to not overwrite history, print warning, and reset dashboard position
+                sys.stdout.write("\n" * last_line_count)
+                print(f"[WARNING] UNKNOWN SENSOR DISCOVERED: {sensor_ip}:{sensor_port} (Edit sensor_config.json to add it!)")
+                print()
+                last_line_count = 0
+            continue
+
+        segment = segment_by_ip[sensor_ip]
+
+        if sensor_ip not in readers:
+            readers[sensor_ip] = WITMotionPacketReader()
+
+        packets = readers[sensor_ip].feed(data)
+
+        for packet in packets:
+            vals = packet.get("values", {})
+            if packet.get("kind") == "wt55":
+                if "acc_x" in vals:
+                    latest[segment]["acc"] = [
+                        vals.get("acc_x", 0) / 32768.0 * 16.0,
+                        vals.get("acc_y", 0) / 32768.0 * 16.0,
+                        vals.get("acc_z", 0) / 32768.0 * 16.0
+                    ]
+                if "gyro_x" in vals:
+                    latest[segment]["gyro"] = [
+                        vals.get("gyro_x", 0) / 32768.0 * 2000.0,
+                        vals.get("gyro_y", 0) / 32768.0 * 2000.0,
+                        vals.get("gyro_z", 0) / 32768.0 * 2000.0
+                    ]
+                if "angle_roll" in vals:
+                    latest[segment]["angle"] = [
+                        vals.get("angle_roll", 0) / 32768.0 * 180.0,
+                        vals.get("angle_pitch", 0) / 32768.0 * 180.0,
+                        vals.get("angle_yaw", 0) / 32768.0 * 180.0
+                    ]
+                latest[segment]["last_seen"] = now
+            else:
+                if packet.get("name") == "acceleration":
+                    latest[segment]["acc"] = [vals.get("ax_g", 0.0), vals.get("ay_g", 0.0), vals.get("az_g", 0.0)]
+                elif packet.get("name") == "angular_velocity":
+                    latest[segment]["gyro"] = [vals.get("gx_dps", 0.0), vals.get("gy_dps", 0.0), vals.get("gz_dps", 0.0)]
+                elif packet.get("name") == "angle":
+                    latest[segment]["angle"] = [vals.get("roll_deg", 0.0), vals.get("pitch_deg", 0.0), vals.get("yaw_deg", 0.0)]
+                latest[segment]["last_seen"] = now
+
+        # Throttle dashboard updates to 10Hz to prevent terminal lag
+        if now - last_print_time >= 0.1:
+            active_segments = []
+            for segment, sdata in latest.items():
+                is_active = sdata["last_seen"] and (now - sdata["last_seen"] < 2.0)
+                if is_active:
+                    active_segments.append((segment, sdata))
+
+            # Move cursor up by the number of lines printed last time
+            if last_line_count > 0:
+                sys.stdout.write(f"\033[{last_line_count}A")
+
+            # Print active segments
+            for segment, sdata in active_segments:
+                acc_str = f"Acc: [{sdata['acc'][0]:6.2f}, {sdata['acc'][1]:6.2f}, {sdata['acc'][2]:6.2f}] G"
+                gyro_str = f"Gyro: [{sdata['gyro'][0]:7.1f}, {sdata['gyro'][1]:7.1f}, {sdata['gyro'][2]:7.1f}] dps"
+                angle_str = f"Angle: [{sdata['angle'][0]:7.1f}, {sdata['angle'][1]:7.1f}, {sdata['angle'][2]:7.1f}] deg"
+                print(f"{segment:<6} ({sdata['ip']}): \033[92mACTIVE\033[0m  | {acc_str} | {gyro_str} | {angle_str}\033[K")
+
+            # Print blank lines for any deactivated segments to clear them
+            excess = last_line_count - len(active_segments)
+            for _ in range(excess):
+                print("\033[K")
+
+            # Move cursor back up over the blank lines so the next run starts at the active count
+            if excess > 0:
+                sys.stdout.write(f"\033[{excess}A")
+
+            last_line_count = len(active_segments)
+            sys.stdout.flush()
+            last_print_time = now
