@@ -1,35 +1,43 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>ISC 3D Real-Time</title>
     <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
     <style>
-        body { 
-            font-family: sans-serif; 
-            background: #1e1e1e; 
-            color: white; 
-            padding: 15px; 
-            margin: 0; 
+        body {
+            font-family: sans-serif;
+            background: #1e1e1e;
+            color: white;
+            padding: 15px;
+            margin: 0;
         }
-        .grid-container { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 20px; 
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
+
         @media (max-width: 800px) {
-            .grid-container { grid-template-columns: 1fr; }
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
         }
-        .col { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px; 
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
-        .plot { 
+
+        .plot {
             /* Fixed: Removed the rigid viewport height limit. Guaranteed 400px minimum. */
-            min-height: 400px; 
-            background: #1e1e1e; 
-            border-radius: 8px; 
+            min-height: 400px;
+            background: #1e1e1e;
+            border-radius: 8px;
         }
+
         .stats-box {
             background: #2d2d2d;
             border-radius: 8px;
@@ -37,15 +45,21 @@
             font-size: 0.9em;
             line-height: 1.5;
         }
-        h3 { 
-            text-align: center; 
-            margin: 0; 
-            padding-top: 5px; 
+
+        h3 {
+            text-align: center;
+            margin: 0;
+            padding-top: 5px;
             font-weight: 600;
         }
-        .hl { font-weight: 700; color: #fff; }
+
+        .hl {
+            font-weight: 700;
+            color: #fff;
+        }
     </style>
 </head>
+
 <body>
     <div class="grid-container">
         <div class="col">
@@ -73,63 +87,63 @@
 
         // 2D Layout 
         const tsLayout = {
-            title: { text: 'Elevation Angles', font: {size: 16, color: '#fff'} }, // Added Title
-            margin: {t: 40, b: 40, l: 50, r: 20}, // Increased 't' (top) margin to 40
-            xaxis: {title: 'Time [samples]', range: [0, windowSize], gridcolor: '#444'},
-            yaxis: {title: 'Elevation Angle [deg]', range: [-80, 120], gridcolor: '#444'},
-            showlegend: true, 
-            legend: {orientation: 'h', y: 1.15}, // Shifted legend up slightly
+            title: { text: 'Elevation Angles', font: { size: 16, color: '#fff' } }, // Added Title
+            margin: { t: 40, b: 40, l: 50, r: 20 }, // Increased 't' (top) margin to 40
+            xaxis: { title: 'Time [samples]', range: [0, windowSize], gridcolor: '#444' },
+            yaxis: { title: 'Elevation Angle [deg]', range: [-80, 120], gridcolor: '#444' },
+            showlegend: true,
+            legend: { orientation: 'h', y: 1.15 }, // Shifted legend up slightly
             paper_bgcolor: '#1e1e1e',
             plot_bgcolor: '#1e1e1e',
-            font: {color: '#fff'}
+            font: { color: '#fff' }
         };
 
         const tsTraces = [
-            { y: [], mode: 'lines', name: 'Thigh', line: {color: cThigh, width: 2} },
-            { y: [], mode: 'lines', name: 'Shank', line: {color: cShank, width: 2} },
-            { y: [], mode: 'lines', name: 'Foot', line: {color: cFoot, width: 2} }
+            { y: [], mode: 'lines', name: 'Thigh', line: { color: cThigh, width: 2 } },
+            { y: [], mode: 'lines', name: 'Shank', line: { color: cShank, width: 2 } },
+            { y: [], mode: 'lines', name: 'Foot', line: { color: cFoot, width: 2 } }
         ];
 
-        Plotly.newPlot('ts-left', JSON.parse(JSON.stringify(tsTraces)), tsLayout, {responsive: true});
-        Plotly.newPlot('ts-right', JSON.parse(JSON.stringify(tsTraces)), tsLayout, {responsive: true});
+        Plotly.newPlot('ts-left', JSON.parse(JSON.stringify(tsTraces)), tsLayout, { responsive: true });
+        Plotly.newPlot('ts-right', JSON.parse(JSON.stringify(tsTraces)), tsLayout, { responsive: true });
 
         // 3D Layout
         const layout3D = {
-                title: { text: 'Covariation Plane (CVP)', font: {size: 16, color: '#fff'} }, // Added Title
-                margin: {t: 40, b: 50, l: 10, r: 10}, // Increased 't' (top) margin to 40
-                scene: {
-                    aspectmode: 'cube', 
-                    xaxis: {title: 'Thigh [deg]', range: [30, -20], gridcolor: '#444', backgroundcolor: '#1e1e1e'},
-                    yaxis: {title: 'Shank [deg]', range: [20, -60], gridcolor: '#444', backgroundcolor: '#1e1e1e'},
-                    zaxis: {title: 'Foot [deg]', range: [0, 150], gridcolor: '#444', backgroundcolor: '#1e1e1e'},
-                    camera: { eye: {x: 2.0, y: 2.0, z: 1.4} }
-                },
-                showlegend: false,
-                paper_bgcolor: '#1e1e1e',
-                font: {color: '#fff'}
-            };
+            title: { text: 'Covariation Plane (CVP)', font: { size: 16, color: '#fff' } }, // Added Title
+            margin: { t: 40, b: 50, l: 10, r: 10 }, // Increased 't' (top) margin to 40
+            scene: {
+                aspectmode: 'cube',
+                xaxis: { title: 'Thigh [deg]', range: [30, -20], gridcolor: '#444', backgroundcolor: '#1e1e1e' },
+                yaxis: { title: 'Shank [deg]', range: [20, -60], gridcolor: '#444', backgroundcolor: '#1e1e1e' },
+                zaxis: { title: 'Foot [deg]', range: [0, 150], gridcolor: '#444', backgroundcolor: '#1e1e1e' },
+                camera: { eye: { x: 2.0, y: 2.0, z: 1.4 } }
+            },
+            showlegend: false,
+            paper_bgcolor: '#1e1e1e',
+            font: { color: '#fff' }
+        };
 
         let cnt = 0;
         const maxPoints = windowSize; // Show last windowSize samples
 
         // New Layout for Scores Plot
         const scoreLayout = {
-            title: { text: 'Principal Component Scores', font: {size: 16, color: '#fff'} },
-            margin: {t: 40, b: 40, l: 50, r: 20},
-            xaxis: {range: [0, windowSize], gridcolor: '#444'},
-            yaxis: {title: 'Score', range: [-70, 70], gridcolor: '#444'},
+            title: { text: 'Principal Component Scores', font: { size: 16, color: '#fff' } },
+            margin: { t: 40, b: 40, l: 50, r: 20 },
+            xaxis: { range: [0, windowSize], gridcolor: '#444' },
+            yaxis: { title: 'Score', range: [-70, 70], gridcolor: '#444' },
             showlegend: true,
-            legend: {orientation: 'h', y: 1.2},
+            legend: { orientation: 'h', y: 1.2 },
             paper_bgcolor: '#1e1e1e',
             plot_bgcolor: '#1e1e1e',
-            font: {color: '#fff'}
+            font: { color: '#fff' }
         };
 
         // Initialize the new plots
         const scoreTraces = [
-            { y: [], mode: 'lines', name: 'PC1', line: {color: cThigh, width: 2} },
-            { y: [], mode: 'lines', name: 'PC2', line: {color: cShank, width: 2} },
-            { y: [], mode: 'lines', name: 'PC3', line: {color: cFoot, width: 2} }
+            { y: [], mode: 'lines', name: 'PC1', line: { color: cThigh, width: 2 } },
+            { y: [], mode: 'lines', name: 'PC2', line: { color: cShank, width: 2 } },
+            { y: [], mode: 'lines', name: 'PC3', line: { color: cFoot, width: 2 } }
         ];
         Plotly.newPlot('scores-left', JSON.parse(JSON.stringify(scoreTraces)), scoreLayout);
         Plotly.newPlot('scores-right', JSON.parse(JSON.stringify(scoreTraces)), scoreLayout);
@@ -140,31 +154,25 @@
             const tsId = `ts-${side}`;
             const plot3dId = `3d-${side}`;
             const statsId = `stats-${side}`;
-            
+
             Plotly.extendTraces(tsId, {
                 y: [[data.angles.thigh], [data.angles.shank], [data.angles.foot]]
-            }, [0, 1, 2]);
+            }, [0, 1, 2], maxPoints);
 
             Plotly.extendTraces(`scores-${side}`, {
                 y: [[data.pca.scores[0]], [data.pca.scores[1]], [data.pca.scores[2]]]
-            }, [0, 1, 2]);
-
-            // Throttle 2D axis sliding window adjustments to once every 5 updates (~6Hz) to save CPU/GPU cycles
-            if (cnt % 5 === 0 && cnt > maxPoints) {
-                Plotly.relayout(tsId, { xaxis: { range: [cnt - maxPoints, cnt] }});
-                Plotly.relayout(`scores-${side}`, { xaxis: { range: [cnt - maxPoints, cnt] }});
-            }
+            }, [0, 1, 2], maxPoints);
 
             // Throttle heavy 3D WebGL rendering and PCA metrics updating to ~10Hz to prevent browser lag
             const now = performance.now();
             if (now - last3DUpdateTime >= 100) {
-                if(data.pca.var[0] !== 0) {
+                if (data.pca.var[0] !== 0) {
                     const v = data.pca.var;
                     const p1 = data.pca.pc1;
                     const p2 = data.pca.pc2;
                     const p3 = data.pca.pc3;
                     const planarity = (v[0] + v[1]).toFixed(2);
-                    
+
                     document.getElementById(statsId).innerHTML = `
                         <div style="text-align: center; font-weight: bold; margin-bottom: 10px; color: #fff; border-bottom: 1px solid #444; padding-bottom: 5px;">
                             Online PCA Metrics
@@ -188,32 +196,32 @@
 
                 const mean = data.pca.mean;
                 const pc3 = data.pca.pc3;
-                const vecScale = 25; 
+                const vecScale = 25;
 
                 const loopTrace = {
-                    x: xBuf, y: yBuf, z: zBuf, 
-                    mode: 'lines', type: 'scatter3d', 
-                    line: {color: 'rgba(69, 100, 253, 0.7)', width: 4}
+                    x: xBuf, y: yBuf, z: zBuf,
+                    mode: 'lines', type: 'scatter3d',
+                    line: { color: 'rgba(69, 100, 253, 0.7)', width: 4 }
                 };
 
                 const vectorTrace = {
-                    x: [mean[0], mean[0] + pc3[0] * vecScale], 
-                    y: [mean[1], mean[1] + pc3[1] * vecScale], 
-                    z: [mean[2], mean[2] + pc3[2] * vecScale], 
-                    mode: 'lines+markers', type: 'scatter3d', 
-                    line: {color: 'white', width: 5},
-                    marker: { size: [0, 5], color: 'white' } 
+                    x: [mean[0], mean[0] + pc3[0] * vecScale],
+                    y: [mean[1], mean[1] + pc3[1] * vecScale],
+                    z: [mean[2], mean[2] + pc3[2] * vecScale],
+                    mode: 'lines+markers', type: 'scatter3d',
+                    line: { color: 'white', width: 5 },
+                    marker: { size: [0, 5], color: 'white' }
                 };
 
                 Plotly.react(plot3dId, [loopTrace, vectorTrace], layout3D);
-                
+
                 if (side === 'right') {
                     last3DUpdateTime = now;
                 }
             }
         }
 
-        ws.onmessage = function(event) {
+        ws.onmessage = function (event) {
             const msg = JSON.parse(event.data);
             cnt++;
             updateLeg('left', msg.left);
@@ -221,4 +229,5 @@
         };
     </script>
 </body>
+
 </html>
