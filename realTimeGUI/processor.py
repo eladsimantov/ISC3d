@@ -170,3 +170,33 @@ class ExponentialGaitProcessor:
             }
 
         return {"angles": {"thigh": thigh, "shank": shank, "foot": foot}, "pca": pca_data}
+
+    def shank_estimate_from_pca(self):
+        """
+        Reconstruct the thigh elevation angle based on the instantaneous estimate of the 
+        PC vectors and means. We assume we get only thigh and foot input and then we try
+        to reconstruct an estimate for the shank based on the covariation plane of 2 PCs.
+            X_s = mu[1] - (1/V[1, 2]) * ( (X_t - mu[0])*V[0, 2] + (X_f - mu[2])*V[2, 2] )
+        """
+        return self.cvp_controller(self.angles['thigh'], self.angles['foot'], self.prev_evecs, self.mu)
+
+    @staticmethod
+    def cvp_controller(X_t: float, X_f: float, V: np.ndarray, mu: np.ndarray) -> float:
+        """Calculate the shank elevation variable based on a covariation plane (CVP).
+
+        Args:
+            X_t (float): The thigh elevation space variable.
+            X_f (float): The foot elevation space variable.
+            V (np.ndarray): The Principal Component vectors in matrix form (eigenvectors as columns).
+            mu (np.ndarray): The mean values of the thigh, shank and foot variables.
+            
+        Returns:
+            X_s (float): The shank elevation space variable in the sagittal plane.
+        
+        Formula:
+            v_3t*(X_t - mu_t) + v_3s*(X_s - mu_s) + v_3f*(X_f - mu_f) = 0
+            X_s = mu_s - (1/v_3s) * ((X_t - mu_t)*v_3t + (X_f - mu_f)*v_3f)
+        """
+        X_s = mu[1] - (1/V[1, 2]) * ( (X_t - mu[0])*V[0, 2] + (X_f - mu[2])*V[2, 2] )
+        return X_s
+
