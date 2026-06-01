@@ -83,7 +83,7 @@
         const cThigh = 'rgb(69, 100, 253)';
         const cShank = 'rgb(252, 126, 110)';
         const cFoot = 'rgb(30, 167, 225)';
-        const windowSize = 50; // Make sure to match the server's WINDOW_SIZE
+        const windowSize = 20; // Make sure to match the server's WINDOW_SIZE
 
         // 2D Layout 
         const tsLayout = {
@@ -123,7 +123,6 @@
             font: { color: '#fff' }
         };
 
-        let cnt = 0;
         const maxPoints = windowSize; // Show last windowSize samples
 
         // New Layout for Scores Plot
@@ -148,54 +147,73 @@
         Plotly.newPlot('scores-left', JSON.parse(JSON.stringify(scoreTraces)), scoreLayout);
         Plotly.newPlot('scores-right', JSON.parse(JSON.stringify(scoreTraces)), scoreLayout);
 
-        let last3DUpdateTime = 0;
+        const queueLeft = { angles: [], scores: [], lastPca: null };
+        const queueRight = { angles: [], scores: [], lastPca: null };
 
-        function updateLeg(side, data) {
+        function updateLeg(side, queue, update3D) {
             const tsId = `ts-${side}`;
             const plot3dId = `3d-${side}`;
             const statsId = `stats-${side}`;
 
+            // Build batched data from queue
+            const thighBatch = [];
+            const shankBatch = [];
+            const footBatch = [];
+            for (let i = 0; i < queue.angles.length; i++) {
+                thighBatch.push(queue.angles[i][0]);
+                shankBatch.push(queue.angles[i][1]);
+                footBatch.push(queue.angles[i][2]);
+            }
+
+            const pc1Batch = [];
+            const pc2Batch = [];
+            const pc3Batch = [];
+            for (let i = 0; i < queue.scores.length; i++) {
+                pc1Batch.push(queue.scores[i][0]);
+                pc2Batch.push(queue.scores[i][1]);
+                pc3Batch.push(queue.scores[i][2]);
+            }
+
+            // Extend 2D plots once per tick with all batched points
             Plotly.extendTraces(tsId, {
-                y: [[data.angles.thigh], [data.angles.shank], [data.angles.foot]]
+                y: [thighBatch, shankBatch, footBatch]
             }, [0, 1, 2], maxPoints);
 
             Plotly.extendTraces(`scores-${side}`, {
-                y: [[data.pca.scores[0]], [data.pca.scores[1]], [data.pca.scores[2]]]
+                y: [pc1Batch, pc2Batch, pc3Batch]
             }, [0, 1, 2], maxPoints);
 
-            // Throttle heavy 3D WebGL rendering and PCA metrics updating to ~10Hz to prevent browser lag
-            const now = performance.now();
-            if (now - last3DUpdateTime >= 100) {
-                if (data.pca.var[0] !== 0) {
-                    const v = data.pca.var;
-                    const p1 = data.pca.pc1;
-                    const p2 = data.pca.pc2;
-                    const p3 = data.pca.pc3;
-                    const planarity = (v[0] + v[1]).toFixed(2);
+            // Update 3D WebGL plots and PCA metrics only on designated 3D update ticks (10Hz)
+            if (update3D && queue.lastPca && queue.lastPca.var[0] !== 0) {
+                const pca = queue.lastPca;
+                const v = pca.var;
+                const p1 = pca.pc1;
+                const p2 = pca.pc2;
+                const p3 = pca.pc3;
+                const planarity = (v[0] + v[1]).toFixed(2);
 
-                    document.getElementById(statsId).innerHTML = `
-                        <div style="text-align: center; font-weight: bold; margin-bottom: 10px; color: #fff; border-bottom: 1px solid #444; padding-bottom: 5px;">
-                            Online PCA Metrics
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span><span class="hl">Planarity (PV1+PV2):</span> ${planarity}%</span>
-                            <span><span class="hl">PV3 (Deviation):</span> ${v[2].toFixed(2)}%</span>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; font-family: monospace; font-size: 0.95em;">
-                            <div><b>PC1:</b><br>[${p1[0].toFixed(2)}, ${p1[1].toFixed(2)}, ${p1[2].toFixed(2)}]</div>
-                            <div><b>PC2:</b><br>[${p2[0].toFixed(2)}, ${p2[1].toFixed(2)}, ${p2[2].toFixed(2)}]</div>
-                            <div><b>PC3:</b><br>[${p3[0].toFixed(2)}, ${p3[1].toFixed(2)}, ${p3[2].toFixed(2)}]</div>
-                        </div>
-                    `;
-                }
+                document.getElementById(statsId).innerHTML = `
+                    <div style="text-align: center; font-weight: bold; margin-bottom: 10px; color: #fff; border-bottom: 1px solid #444; padding-bottom: 5px;">
+                        Online PCA Metrics
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span><span class="hl">Planarity (PV1+PV2):</span> ${planarity}%</span>
+                        <span><span class="hl">PV3 (Deviation):</span> ${v[2].toFixed(2)}%</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; font-family: monospace; font-size: 0.95em;">
+                        <div><b>PC1:</b><br>[${p1[0].toFixed(2)}, ${p1[1].toFixed(2)}, ${p1[2].toFixed(2)}]</div>
+                        <div><b>PC2:</b><br>[${p2[0].toFixed(2)}, ${p2[1].toFixed(2)}, ${p2[2].toFixed(2)}]</div>
+                        <div><b>PC3:</b><br>[${p3[0].toFixed(2)}, ${p3[1].toFixed(2)}, ${p3[2].toFixed(2)}]</div>
+                    </div>
+                `;
 
                 const tsDiv = document.getElementById(tsId);
                 const xBuf = tsDiv.data[0].y.slice(-maxPoints);
                 const yBuf = tsDiv.data[1].y.slice(-maxPoints);
                 const zBuf = tsDiv.data[2].y.slice(-maxPoints);
 
-                const mean = data.pca.mean;
-                const pc3 = data.pca.pc3;
+                const mean = pca.mean;
+                const pc3 = pca.pc3;
                 const vecScale = 25;
 
                 const loopTrace = {
@@ -214,19 +232,39 @@
                 };
 
                 Plotly.react(plot3dId, [loopTrace, vectorTrace], layout3D);
-
-                if (side === 'right') {
-                    last3DUpdateTime = now;
-                }
             }
         }
 
         ws.onmessage = function (event) {
             const msg = JSON.parse(event.data);
-            cnt++;
-            updateLeg('left', msg.left);
-            updateLeg('right', msg.right);
+
+            queueLeft.angles.push([msg.left.angles.thigh, msg.left.angles.shank, msg.left.angles.foot]);
+            queueLeft.scores.push([msg.left.pca.scores[0], msg.left.pca.scores[1], msg.left.pca.scores[2]]);
+            queueLeft.lastPca = msg.left.pca;
+
+            queueRight.angles.push([msg.right.angles.thigh, msg.right.angles.shank, msg.right.angles.foot]);
+            queueRight.scores.push([msg.right.pca.scores[0], msg.right.pca.scores[1], msg.right.pca.scores[2]]);
+            queueRight.lastPca = msg.right.pca;
         };
+
+        // Render loop running at 20Hz (every 50ms) to batch and dispatch Plotly updates
+        let tick = 0;
+        setInterval(() => {
+            tick++;
+            const update3D = (tick % 2 === 0); // 3D and PCA text updates at 10Hz (every 100ms)
+
+            if (queueLeft.angles.length > 0) {
+                updateLeg('left', queueLeft, update3D);
+                queueLeft.angles = [];
+                queueLeft.scores = [];
+            }
+
+            if (queueRight.angles.length > 0) {
+                updateLeg('right', queueRight, update3D);
+                queueRight.angles = [];
+                queueRight.scores = [];
+            }
+        }, 50);
     </script>
 </body>
 
